@@ -7,6 +7,8 @@ public class PlayerControllerX : MonoBehaviour
     public bool gameOver;
 
     public float floatForce;
+    public float bounceForce = 500f;
+    public float topBound = 14f;
     private float gravityModifier = 1.5f;
     private Rigidbody playerRb;
 
@@ -16,6 +18,7 @@ public class PlayerControllerX : MonoBehaviour
     private AudioSource playerAudio;
     public AudioClip moneySound;
     public AudioClip explodeSound;
+    public AudioClip bounceSound;
 
 
     // Start is called before the first frame update
@@ -23,6 +26,7 @@ public class PlayerControllerX : MonoBehaviour
     {
         Physics.gravity *= gravityModifier;
         playerAudio = GetComponent<AudioSource>();
+        playerRb = GetComponent<Rigidbody>();
 
         // Apply a small upward force at the start of the game
         playerRb.AddForce(Vector3.up * 5, ForceMode.Impulse);
@@ -37,6 +41,15 @@ public class PlayerControllerX : MonoBehaviour
         {
             playerRb.AddForce(Vector3.up * floatForce);
         }
+
+        // Prevent player from going over top boundary
+        if (transform.position.y > topBound)
+        {
+            var newPos = transform.position;
+            newPos.y = topBound;
+            transform.position = newPos;
+            playerRb.AddForce(Vector3.down * floatForce);
+        }
     }
 
     private void OnCollisionEnter(Collision other)
@@ -49,17 +62,23 @@ public class PlayerControllerX : MonoBehaviour
             gameOver = true;
             Debug.Log("Game Over!");
             Destroy(other.gameObject);
-        } 
+        }
 
         // if player collides with money, fireworks
         else if (other.gameObject.CompareTag("Money"))
         {
+            fireworksParticle.transform.position = other.transform.position;
             fireworksParticle.Play();
             playerAudio.PlayOneShot(moneySound, 1.0f);
             Destroy(other.gameObject);
 
         }
 
+        else if (other.gameObject.CompareTag("Ground"))
+        {
+            playerRb.AddForce(Vector3.up * bounceForce);
+            playerAudio.PlayOneShot(bounceSound, 1.0f);
+        }
     }
 
 }
